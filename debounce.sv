@@ -6,12 +6,21 @@ module debounce #(
     output logic pb_debounced
 );
 
-    logic [n-1:0] shift_reg;
+    // 100 MHz clock → sample every 1 ms
+    localparam integer SAMPLE_COUNT = 100_000;
+
+    logic [16:0] cnt = 0;
+    logic [n-1:0] shift_reg = '0;
 
     always_ff @(posedge clk) begin
-        shift_reg[n-1:1] <= shift_reg[n-2:0];
-        shift_reg[0] <= pb;
+        if (cnt == SAMPLE_COUNT - 1) begin
+            cnt <= 0;
+            shift_reg <= {shift_reg[n-2:0], pb};
+        end else begin
+            cnt <= cnt + 1'b1;
+        end
     end
 
     assign pb_debounced = &shift_reg;
+
 endmodule
