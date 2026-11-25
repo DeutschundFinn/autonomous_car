@@ -31,7 +31,13 @@ module lab6_advanced(
     logic [19:0] distance;  // output of sonic_top
     localparam brake_distance = 10;
     assign mode = (distance < brake_distance) ? 3'b000 : state;
-    
+    assign LED[4:0] = {IR_out1, IR_out2, IR_out3, IR_out4, IR_out5};
+    assign LED[7:5] = state;
+    assign LED[10:8] = mode;
+    assign LED[14:11] = 4'b0000;
+    assign LED[15] = (distance <= 20);
+    assign DISPLAY = 7'b1111111;
+    assign DIGIT = 4'b1111;
     tracker_sensor A(
         .clk(clk),
         .rst(rst_op),
