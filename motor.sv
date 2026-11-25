@@ -4,7 +4,7 @@
 module motor(
     input logic clk,
     input logic rst,
-    input logic [2:0] mode,
+    input logic [2:0] mode, //0: stop 1: forward 2: backward 3: rotate left 4: rotate right 5: turn left 6: turn right 7: not implemented
     output logic [1:0] pwm,
     output logic [1:0] r_IN,
     output logic [1:0] l_IN
@@ -30,6 +30,46 @@ module motor(
     );
 
     // TODO: trace the rest of motor.v and control the speed and direction of the two motors
+    // current duty cycle: ~60%
+    always_comb begin
+        case(mode)
+            3'b000: begin
+                r_IN = '0;
+                l_IN = '0;
+            end
+            3'b001: begin
+                r_IN = 2'b01;
+                l_IN = 2'b01;
+            end
+            3'b010: begin
+                r_IN = 2'b10;
+                l_IN = 2'b10;
+            end
+            3'b011: begin
+                r_IN = 2'b01;
+                l_IN = 2'b10;
+            end
+            3'b100: begin
+                r_IN = 2'b10;
+                l_IN = 2'b01;
+            end
+            3'b101: begin
+                r_IN = 2'b01;
+                l_IN = '0;
+            end
+            3'b110: begin
+                r_IN = '0;
+                l_IN = 2'b01;
+            end
+            default: begin
+                r_IN = '0;
+                l_IN = '0;
+            end
+        endcase
+
+        left_motor = (|l_IN) ? 10'd615:'0;
+        right_motor = (|r_IN) ? 10'd615:'0;
+    end
     
 endmodule
 
@@ -57,6 +97,8 @@ module PWM_gen (
             end else begin
                 count <= count + 1;
                 // TODO: set <PWM> accordingly
+                if(count >= count_duty - 32'd1) PWM <= 0;
+                else PWM <= 1;
             end
         end
     end
