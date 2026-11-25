@@ -4,7 +4,7 @@
 module motor(
     input logic clk,
     input logic rst,
-    input logic [2:0] mode, //0: stop 1: forward 2: backward 3: rotate left 4: rotate right 5: turn left 6: turn right 7: not implemented
+    input logic [2:0] mode, //0: stop 1: forward 2: backward 3: slow rotate left 4: slow rotate right 5: fast rotate left 6: fast rotate right 7: not implemented
     output logic [1:0] pwm,
     output logic [1:0] r_IN,
     output logic [1:0] l_IN
@@ -30,7 +30,7 @@ module motor(
     );
 
     // TODO: trace the rest of motor.v and control the speed and direction of the two motors
-    // current duty cycle: ~60%
+    // current duty cycle: slow ~60% fast ~70%
     always_comb begin
         case(mode)
             3'b000: begin
@@ -45,20 +45,12 @@ module motor(
                 r_IN = 2'b10;
                 l_IN = 2'b10;
             end
-            3'b011: begin
+            3'b011, 3'b101: begin
                 r_IN = 2'b01;
                 l_IN = 2'b10;
             end
-            3'b100: begin
+            3'b100, 3'b110: begin
                 r_IN = 2'b10;
-                l_IN = 2'b01;
-            end
-            3'b101: begin
-                r_IN = 2'b01;
-                l_IN = '0;
-            end
-            3'b110: begin
-                r_IN = '0;
                 l_IN = 2'b01;
             end
             default: begin
@@ -67,8 +59,17 @@ module motor(
             end
         endcase
 
-        left_motor = (|l_IN) ? 10'd615:'0;
-        right_motor = (|r_IN) ? 10'd615:'0;
+        if(|l_IN)begin
+            if(mode==3'b011 || mode==3'b100) left_motor = 10'd615;
+            else left_motor = 10'd717;
+        end
+        else left_motor = '0;
+
+        if(|r_IN)begin
+            if(mode==3'b101 || mode==3'b110) right_motor = 10'd615;
+            else right_motor = 10'd717;
+        end
+        else right_motor = '0;
     end
     
 endmodule
