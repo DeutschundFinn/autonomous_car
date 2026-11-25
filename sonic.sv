@@ -10,7 +10,7 @@ module sonic_top(
     output logic [19:0] distance
 );
     logic clk1M;
-    div clk1(clk, clk1M);
+    div clk1(.clk(clk), .out_clk(clk1M), .rst(rst));
 
     trig_signal ts(.clk(clk), .rst(rst), .trig(trig));
     pos_counter pc(.clk1M(clk1M), .rst(rst), .echo(echo), .distance_count(distance));
@@ -20,18 +20,23 @@ endmodule
 // clock divider for T = 1us clock
 module div(
     input logic clk,
+    input logic rst,
     output logic out_clk
 );
     logic [6:0] cnt;
 
-    always_ff @(posedge clk) begin
-        if (cnt >= 7'd99) begin
-            cnt <= 7'd0;
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            cnt <= 0;
+            out_clk <= 0;
         end else begin
-            cnt <= cnt + 1'b1;
+            if (cnt >= 7'd99) begin
+                cnt <= 7'd0;
+            end else begin
+                cnt <= cnt + 1'b1;
+            end
+            out_clk <= (cnt < 7'd50) ? 1'b1 : 1'b0;
         end
-
-        out_clk <= (cnt < 7'd50) ? 1'b1 : 1'b0;
     end
 endmodule
 
@@ -64,7 +69,7 @@ module trig_signal(
         end
 
         // TODO: set <next_trig> to let the sensor work properly
-        if(count >= 24'd999) next_trig = 0;
+        if(count >= 24'd1000) next_trig = 0;
         else next_trig = 1;
     end
 endmodule
@@ -83,10 +88,12 @@ module pos_counter(
     logic [19:0] count, distance_register;
 
     logic echo_reg1, echo_reg2;
-    logic start = echo_reg1 & ~echo_reg2;
-    logic finish = ~echo_reg1 & echo_reg2;
+    logic start;
+    logic finish;
+    assign start  = echo_reg1 & ~echo_reg2;
+    assign finish = ~echo_reg1 & echo_reg2;
     
-    always_ff @(posedge clk1M) begin
+    always_ff @(posedge clk1M or posedge rst) begin
         if (rst) begin
             echo_reg1 <= 0;
             echo_reg2 <= 0;
@@ -128,5 +135,5 @@ module pos_counter(
     end
 
     // TODO: trace the code and calculate the distance, output it to <distance_count>
-    assign distance_count = (distance_register>>1) / 1e4 * 340;
+    assign distance_count = (distance_register >> 1) * 340 / 10000;
 endmodule
