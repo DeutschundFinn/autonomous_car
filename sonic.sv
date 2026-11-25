@@ -64,6 +64,8 @@ module trig_signal(
         end
 
         // TODO: set <next_trig> to let the sensor work properly
+        if(count >= 24'd999) next_trig = 0;
+        else next_trig = 1;
     end
 endmodule
 
@@ -72,7 +74,7 @@ module pos_counter(
     input logic clk1M,
     input logic rst,
     input logic echo,
-    output logic [19:0] distance_count
+    output logic [19:0] distance_count //distance in cm
 ); 
     localparam S0 = 2'b00;
     localparam S1 = 2'b01;
@@ -126,4 +128,5 @@ module pos_counter(
     end
 
     // TODO: trace the code and calculate the distance, output it to <distance_count>
+    assign distance_count = (distance_register>>1) / 1e4 * 340;
 endmodule
