@@ -29,6 +29,8 @@ module lab6_advanced(
     logic [2:0] state;      // output of track_sensor
     logic [2:0] mode;       // input of motor
     logic [19:0] distance;  // output of sonic_top
+    localparam brake_distance = 10;
+    assign mode = (distance < brake_distance) ? 3'b000 : state;
     
     tracker_sensor A(
         .clk(clk),
