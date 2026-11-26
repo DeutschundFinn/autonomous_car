@@ -32,12 +32,85 @@ module lab6_advanced(
     localparam brake_distance = 10;
     assign mode = (distance < brake_distance) ? 3'b000 : state;
     assign LED[4:0] = {IR_out1, IR_out2, IR_out3, IR_out4, IR_out5};
-    assign LED[7:5] = state;
-    assign LED[10:8] = mode;
-    assign LED[14:11] = 4'b0000;
+    assign LED[5] = 0;
+    assign LED[8:6] = state;
+    assign LED[9] = 0;
+    assign LED[12:10] = mode;
+    assign LED[14:13] = '0;
     assign LED[15] = (distance <= 20);
-    assign DISPLAY = 7'b1111111;
-    assign DIGIT = 4'b1111;
+
+    localparam ONE_MS = 100_000;
+    logic [16:0] count, next_count;
+    logic tick1ms;
+    always_ff @(posedge clk, posedge rst)begin
+        if(rst) count <= '0;
+        else count <= next_count;
+    end
+    assign next_count = (count==ONE_MS) ? '0: count+17'd1;
+    assign tick1ms = count==ONE_MS;
+
+    //binary to bcd converter
+    logic [15:0] distance_display;
+    logic [3:0] i;
+    always_comb begin
+        distance_display = '0;
+        for(i=0; i<4'd9; i++)begin
+            if(distance_display[11:8] >= 4'd5) distance_display[11:8] = distance_display[11:8] + 4'd3;
+            if(distance_display[7:4] >= 4'd5) distance_display[7:4] = distance_display[7:4] + 4'd3;
+            if(distance_display[3:0] >= 4'd5) distance_display[3:0] = distance_display[3:0] + 4'd3;
+            distance_display = distance_display << 1;
+            distance_display[0] = distance[4'd8-i];
+        end
+        distance_display[15:12] = 4'd10;
+    end
+
+    logic [3:0] display_num;
+    always_ff @(posedge clk, posedge rst) begin
+        if(rst) begin
+            DIGIT <= 4'b1111;
+            display_num <= 4'd10;
+        end
+        else if(tick1ms) begin
+            case(DIGIT)
+                4'b1110: begin
+                    DIGIT <= 4'b1101;
+                    display_num <= distance_display[7:4];
+                end
+                4'b1101: begin
+                    DIGIT <= 4'b1011;
+                    display_num <= distance_display[11:8];
+                end
+                4'b1011: begin
+                    DIGIT <= 4'b0111;
+                    display_num <= distance_display[15:12];
+                end
+                4'b0111: begin
+                    DIGIT <= 4'b1110;
+                    display_num <= distance_display[3:0];
+                end
+                default: begin
+                    DIGIT <= 4'b1110;
+                    display_num <= distance_display[3:0];
+                end
+            endcase
+        end
+    end
+
+    always_comb begin
+        case(display_num)
+            4'd0: DISPLAY = 7'b1000000;
+            4'd1: DISPLAY = 7'b1111001;
+            4'd2: DISPLAY = 7'b0100100;
+            4'd3: DISPLAY = 7'b0110000;
+            4'd4: DISPLAY = 7'b0011001;
+            4'd5: DISPLAY = 7'b0010010;
+            4'd6: DISPLAY = 7'b0000010;
+            4'd7: DISPLAY = 7'b1111000;
+            4'd8: DISPLAY = 7'b0000000;
+            4'd9: DISPLAY = 7'b0010000;
+            default: DISPLAY = 7'b1111111;
+        endcase
+    end
     tracker_sensor A(
         .clk(clk),
         .rst(rst_op),

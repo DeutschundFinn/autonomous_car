@@ -74,7 +74,7 @@ module pos_counter(
     input logic clk1M,
     input logic rst,
     input logic echo,
-    output logic [19:0] distance_count //distance in cm
+    output logic [19:0] distance_count
 ); 
     localparam S0 = 2'b00;
     localparam S1 = 2'b01;
