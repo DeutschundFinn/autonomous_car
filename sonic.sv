@@ -128,5 +128,5 @@ module pos_counter(
     end
 
     // TODO: trace the code and calculate the distance, output it to <distance_count>
-    assign distance_count = (distance_register>>1) / 1e4 * 340;
+    assign distance_count = (distance_register>>1) * 340 / 1e4;
 endmodule
