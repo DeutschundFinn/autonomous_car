@@ -62,6 +62,10 @@ module lab6_advanced(
             distance_display[0] = distance[4'd8-i];
         end
         distance_display[15:12] = 4'd10;
+        if(distance_display[11:8]==4'd0) begin
+            distance_display[11:8] = 4'd10;
+            if(distance_display[7:4]==4'd0) distance_display[7:4] = 4'd10;
+        end
     end
 
     logic [3:0] display_num;
